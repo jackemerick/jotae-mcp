@@ -227,6 +227,7 @@ const TOOLS = [
         destination:  { type: 'string', enum: ['individual', 'group'], description: 'Destino WhatsApp (padrão: individual)' },
         media_url:    { type: 'string', description: 'URL de mídia opcional (WhatsApp)' },
         media_type:   { type: 'string', enum: ['image', 'video', 'document'], description: 'Tipo de mídia (WhatsApp)' },
+        folder_id:    { type: 'string', description: 'ID da pasta (use list_folders ou create_folder)' },
       },
       required: ['channel', 'name', 'body'],
     },
@@ -247,6 +248,24 @@ const TOOLS = [
         media_type:   { type: 'string', enum: ['image', 'video', 'document'] },
       },
       required: ['template_id'],
+    },
+  },
+
+  // ── Pastas de templates ──
+  {
+    name: 'list_folders',
+    description: 'Lista as pastas de templates criadas pelo produtor.',
+    inputSchema: { type: 'object' as const, properties: {} },
+  },
+  {
+    name: 'create_folder',
+    description: 'Cria uma pasta para organizar templates. Retorna o folder_id para usar em create_template.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        name: { type: 'string', description: 'Nome da pasta (ex: "Aquecimento", "Pós-live")' },
+      },
+      required: ['name'],
     },
   },
 
@@ -426,6 +445,12 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         result = await api('PATCH', `/templates/${template_id}`, patch)
         break
       }
+      case 'list_folders':
+        result = await api('GET', '/folders')
+        break
+      case 'create_folder':
+        result = await api('POST', '/folders', { name: a.name })
+        break
       case 'list_contacts':
         result = await api('GET', `/contacts?limit=${a.limit ?? 100}&offset=${a.offset ?? 0}`)
         break
