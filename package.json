@@ -1,6 +1,6 @@
 {
   "name": "jotae-mcp",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "MCP Server para o Jotae — cria eventos, configura automações e lê métricas via Claude",
   "main": "dist/index.js",
   "bin": {
