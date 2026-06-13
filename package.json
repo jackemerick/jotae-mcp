@@ -1,6 +1,6 @@
 {
   "name": "jotae-mcp",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "MCP Server para o Jotae — cria eventos, configura automações e lê métricas via Claude",
   "main": "dist/index.js",
   "bin": {
@@ -20,6 +20,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.0"
   },
+  "files": ["dist", "README.md"],
   "keywords": ["mcp", "jotae", "claude", "ai", "events", "whatsapp"],
   "license": "MIT"
 }

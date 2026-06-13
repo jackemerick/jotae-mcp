@@ -26,8 +26,8 @@ async function api(method: string, path: string, body?: unknown) {
     },
     body: body ? JSON.stringify(body) : undefined,
   })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
+  const json = await res.json() as Record<string, unknown>
+  if (!res.ok) throw new Error((json.error as string) ?? `HTTP ${res.status}`)
   return json
 }
 
@@ -196,6 +196,53 @@ const TOOLS = [
       },
     },
   },
+  {
+    name: 'get_template',
+    description: 'Retorna o conteúdo completo de um template (body, subject, mídia). Use para ler o que está escrito antes de editar.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        template_id: { type: 'string', description: 'ID do template' },
+      },
+      required: ['template_id'],
+    },
+  },
+  {
+    name: 'create_template',
+    description: 'Cria um novo template de WhatsApp ou e-mail com conteúdo.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        channel:      { type: 'string', enum: ['whatsapp', 'email'], description: 'Canal do template' },
+        name:         { type: 'string', description: 'Nome do template' },
+        body:         { type: 'string', description: 'Corpo da mensagem. Use {{nome}}, {{evento}} como variáveis.' },
+        subject:      { type: 'string', description: 'Assunto (só e-mail)' },
+        sender_name:  { type: 'string', description: 'Nome do remetente (só e-mail)' },
+        destination:  { type: 'string', enum: ['individual', 'group'], description: 'Destino WhatsApp (padrão: individual)' },
+        media_url:    { type: 'string', description: 'URL de mídia opcional (WhatsApp)' },
+        media_type:   { type: 'string', enum: ['image', 'video', 'document'], description: 'Tipo de mídia (WhatsApp)' },
+      },
+      required: ['channel', 'name', 'body'],
+    },
+  },
+  {
+    name: 'update_template',
+    description: 'Edita o conteúdo de um template existente. Passe apenas os campos que deseja alterar.',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        template_id:  { type: 'string', description: 'ID do template' },
+        name:         { type: 'string' },
+        body:         { type: 'string', description: 'Novo corpo da mensagem' },
+        subject:      { type: 'string', description: 'Novo assunto (e-mail)' },
+        sender_name:  { type: 'string', description: 'Nome do remetente (e-mail)' },
+        destination:  { type: 'string', enum: ['individual', 'group'] },
+        media_url:    { type: 'string' },
+        media_type:   { type: 'string', enum: ['image', 'video', 'document'] },
+      },
+      required: ['template_id'],
+    },
+  },
 
   // ── Dados ──
   {
@@ -358,6 +405,17 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       case 'list_templates':
         result = await api('GET', `/templates${a.channel ? `?channel=${a.channel}` : ''}`)
         break
+      case 'get_template':
+        result = await api('GET', `/templates/${a.template_id}`)
+        break
+      case 'create_template':
+        result = await api('POST', '/templates', a)
+        break
+      case 'update_template': {
+        const { template_id, ...patch } = a
+        result = await api('PATCH', `/templates/${template_id}`, patch)
+        break
+      }
       case 'list_contacts':
         result = await api('GET', `/contacts?limit=${a.limit ?? 100}&offset=${a.offset ?? 0}`)
         break
