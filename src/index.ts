@@ -144,16 +144,17 @@ const TOOLS = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        event_id:             { type: 'string' },
-        label:                { type: 'string', description: 'Nome descritivo da automação' },
-        channel:              { type: 'string', enum: ['whatsapp', 'email'] },
-        trigger:              { type: 'string', enum: ['registration', 'event_start', 'event_end', 'attended', 'no_show', 'watched_pitch', 'clicked_cta', 'purchased', 'scheduled'] },
-        delay_minutes:        { type: 'number', description: 'Minutos após o gatilho (negativo = antes)' },
-        template_id:          { type: 'string', description: 'ID do template (WhatsApp ou e-mail — mesmo campo para ambos os canais)' },
-        send_time:            { type: 'string', description: 'Ancora horário HH:MM (ex: "08:00")' },
-        scheduled_at:         { type: 'string', description: 'Data/hora absoluta ISO 8601 (para trigger=scheduled)' },
-        audience_list_id:     { type: 'string', description: 'ID da lista de destinatários' },
-        exclude_list_id:      { type: 'string', description: 'ID da lista de exclusão' },
+        event_id:         { type: 'string' },
+        label:            { type: 'string', description: 'Nome descritivo da automação' },
+        channel:          { type: 'string', enum: ['whatsapp', 'email'] },
+        trigger:          { type: 'string', enum: ['registration', 'event_start', 'event_end', 'attended', 'no_show', 'watched_pitch', 'clicked_cta', 'purchased', 'scheduled'] },
+        delay_minutes:    { type: 'number', description: 'Minutos após o gatilho (negativo = antes)' },
+        template_id:      { type: 'string', description: 'ID do template (WhatsApp ou e-mail — mesmo campo para ambos)' },
+        destination:      { type: 'string', enum: ['individual', 'group'], description: 'WhatsApp: individual (padrão) ou group' },
+        group_id:         { type: 'string', description: 'ID do grupo WhatsApp (quando destination=group)' },
+        scheduled_at:     { type: 'string', description: 'ISO 8601 — obrigatório quando trigger=scheduled' },
+        audience_list_id: { type: 'string', description: 'ID da lista de destinatários (filtra quem recebe)' },
+        exclude_list_id:  { type: 'string', description: 'ID da lista de exclusão (quem não recebe)' },
       },
       required: ['event_id', 'channel', 'trigger'],
     },
@@ -164,12 +165,18 @@ const TOOLS = [
     inputSchema: {
       type: 'object' as const,
       properties: {
-        automation_id:  { type: 'string' },
-        label:          { type: 'string' },
-        delay_minutes:  { type: 'number' },
-        send_time:      { type: 'string' },
-        scheduled_at:   { type: 'string' },
-        active:         { type: 'boolean' },
+        automation_id:    { type: 'string' },
+        label:            { type: 'string' },
+        channel:          { type: 'string', enum: ['whatsapp', 'email'] },
+        trigger:          { type: 'string' },
+        delay_minutes:    { type: 'number' },
+        template_id:      { type: 'string' },
+        destination:      { type: 'string', enum: ['individual', 'group'] },
+        group_id:         { type: 'string' },
+        scheduled_at:     { type: 'string' },
+        audience_list_id: { type: 'string' },
+        exclude_list_id:  { type: 'string' },
+        active:           { type: 'boolean' },
       },
       required: ['automation_id'],
     },
@@ -391,9 +398,9 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         result = await api('GET', `/automations${a.event_id ? `?event_id=${a.event_id}` : ''}`)
         break
       case 'create_automation': {
-        // broadcast_template_id não existe na tabela — remover se vier por engano
+        // send_time e broadcast_template_id não existem na tabela whatsapp_automations
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { broadcast_template_id: _btid, ...autoBody } = a as Record<string, unknown>
+        const { broadcast_template_id: _b, send_time: _s, ...autoBody } = a as Record<string, unknown>
         result = await api('POST', '/automations', autoBody)
         break
       }
