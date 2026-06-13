@@ -149,8 +149,7 @@ const TOOLS = [
         channel:              { type: 'string', enum: ['whatsapp', 'email'] },
         trigger:              { type: 'string', enum: ['registration', 'event_start', 'event_end', 'attended', 'no_show', 'watched_pitch', 'clicked_cta', 'purchased', 'scheduled'] },
         delay_minutes:        { type: 'number', description: 'Minutos após o gatilho (negativo = antes)' },
-        template_id:          { type: 'string', description: 'ID do template WhatsApp' },
-        broadcast_template_id:{ type: 'string', description: 'ID do template de e-mail' },
+        template_id:          { type: 'string', description: 'ID do template (WhatsApp ou e-mail — mesmo campo para ambos os canais)' },
         send_time:            { type: 'string', description: 'Ancora horário HH:MM (ex: "08:00")' },
         scheduled_at:         { type: 'string', description: 'Data/hora absoluta ISO 8601 (para trigger=scheduled)' },
         audience_list_id:     { type: 'string', description: 'ID da lista de destinatários' },
@@ -391,9 +390,13 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       case 'list_automations':
         result = await api('GET', `/automations${a.event_id ? `?event_id=${a.event_id}` : ''}`)
         break
-      case 'create_automation':
-        result = await api('POST', '/automations', a)
+      case 'create_automation': {
+        // broadcast_template_id não existe na tabela — remover se vier por engano
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { broadcast_template_id: _btid, ...autoBody } = a as Record<string, unknown>
+        result = await api('POST', '/automations', autoBody)
         break
+      }
       case 'update_automation': {
         const { automation_id, ...patch } = a
         result = await api('PATCH', `/automations/${automation_id}`, patch)
